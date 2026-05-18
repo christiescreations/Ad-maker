@@ -1,0 +1,9 @@
+Pillow
+numpy
+scikit-learn
+matplotlib
+mtcnn
+opencv-python-headless
+qrcode
+requests
+streamlit
