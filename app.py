@@ -414,9 +414,6 @@ def grid_to_coords(grid_input, width, height):
     return (x, y)
 
 #Runner
-# Streamlit interface
-st.title("Ad Maker")
-st.write("Science-backed poster design")
 
 uploaded_file = st.file_uploader("Upload your image", type=["jpg","jpeg","png","webp"])
 text = st.text_input("Enter main text:")
