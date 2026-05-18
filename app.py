@@ -2,7 +2,7 @@ import streamlit as st
 
 st.title("Ad Maker")
 st.write("Welcome to Ad Maker!")
-import streamlit as st
+
 
 st.write("Upload your photo and get science-backed design suggestions")
 
@@ -19,7 +19,7 @@ if st.button("Generate Poster"):
     # all your functions run here
     pass
 
-import streamlit as st
+
 import os
 import requests
 import random
