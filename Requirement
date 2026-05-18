@@ -4,6 +4,6 @@ scikit-learn
 matplotlib
 mtcnn
 opencv-python-headless
-qrcode
+qrcode [pil]
 requests
 streamlit
