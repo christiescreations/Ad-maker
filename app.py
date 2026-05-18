@@ -4,7 +4,6 @@ st.title("Ad Maker")
 st.write("Welcome to Ad Maker!")
 import streamlit as st
 
-st.title("Ad Maker")
 st.write("Upload your photo and get science-backed design suggestions")
 
 # Upload image
@@ -32,7 +31,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw, ImageFont
 from sklearn.cluster import KMeans
-from mtcnn import MTCNN
 from io import BytesIO
 
 import streamlit as st
@@ -144,10 +142,10 @@ def rgb_to_cmyk(r, g, b):
 
 #face detection
 def find_face(image_path):
-    detector = MTCNN()
     img = cv2.imread(image_path)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    faces = detector.detect_faces(img)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
     return faces
 
 #text emotion
