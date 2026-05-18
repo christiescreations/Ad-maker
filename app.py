@@ -415,22 +415,3 @@ def grid_to_coords(grid_input, width, height):
 
 #Runner
 
-uploaded_file = st.file_uploader("Upload your image", type=["jpg","jpeg","png","webp"])
-text = st.text_input("Enter main text:")
-cta_text = st.text_input("Enter CTA text:")
-contact = st.text_input("Enter phone or website link:")
-
-if st.button("Generate Poster"):
-    if uploaded_file and text:
-        image_path = f"temp_{uploaded_file.name}"
-        with open(image_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        bg_for_cta = get_dominant_color(image_path)
-        img, output_path, text_fill_color, font_path = render_text_on_image(image_path, text)
-        if cta_text or contact:
-            img = render_cta(img, cta_text, contact, text_fill_color, bg_for_cta, font_path)
-            img.save(output_path)
-        st.image(output_path)
-    else:
-        st.warning("Please upload an image and enter text!")
-
