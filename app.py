@@ -192,7 +192,7 @@ def suggest_position(image_path, emotion="neutral"):
     best_section = None
 
     if len(faces) > 0:
-        x, y, w, h = faces[0]['box']
+        x, y, w, h = faces[0]
         face_center_x = x + w // 2
         face_center_y = y + h // 2
 
