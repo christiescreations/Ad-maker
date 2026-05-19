@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 from sklearn.cluster import KMeans
 
 # ── API key & font list ────────────────────────────────────────────────────────
-api_key = st.secrets["GOOGLE_FONTS_API_KEY"]
+api_key = st.secrets["your_actual_key"]
 
 font_list = [
     "Inter", "Montserrat", "Oswald", "Playfair Display", "Bodoni Moda",
