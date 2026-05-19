@@ -20,6 +20,7 @@ if st.button("Generate Poster"):
     pass
 
 
+import streamlit as st
 import os
 import requests
 import random
@@ -28,12 +29,10 @@ import textwrap
 import qrcode
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw, ImageFont
 from sklearn.cluster import KMeans
 from io import BytesIO
 
-import streamlit as st
 api_key = st.secrets["GOOGLE_FONTS_API_KEY"]
 
 font_list = [
@@ -414,5 +413,25 @@ def grid_to_coords(grid_input, width, height):
     return (x, y)
 
 #Runner
+st.title("Ad Maker")
+st.write("Science-backed poster design")
 
+uploaded_file = st.file_uploader("Upload your image", type=["jpg","jpeg","png","webp"], key="upload")
+text = st.text_input("Enter main text:", key="main_text")
+cta_text = st.text_input("Enter CTA text:", key="cta_text")
+contact = st.text_input("Enter phone or website link:", key="contact")
+
+if st.button("Generate Poster", key="generate"):
+    if uploaded_file and text:
+        image_path = f"temp_{uploaded_file.name}"
+        with open(image_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        bg_for_cta = get_dominant_color(image_path)
+        img, output_path, text_fill_color, font_path = render_text_on_image(image_path, text)
+        if cta_text or contact:
+            img = render_cta(img, cta_text, contact, text_fill_color, bg_for_cta, font_path)
+            img.save(output_path)
+        st.image(output_path)
+    else:
+        st.warning("Please upload an image and enter text!")
 
