@@ -41,7 +41,7 @@ from sklearn.cluster import KMeans
 from io import BytesIO
 
 import streamlit as st
-api_key = st.secrets["GOOGLE_FONTS_API_KEY"]
+api_key = st.secrets["AIzaSyANJsHSweYRSL9FgqEq8sSDmy5w1SUWSu8"]
 
 font_list = [
     "Inter",
