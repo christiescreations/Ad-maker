@@ -14,6 +14,7 @@ import streamlit as st
 
 # ── API KEY ──────────────────────────────────────────────────────────────────
 api_key = st.secrets["GOOGLE_FONTS_API_KEY"]
+st.write("Key starts with:", api_key[:8])
 
 # ── FONT LIST ─────────────────────────────────────────────────────────────────
 font_list = [
