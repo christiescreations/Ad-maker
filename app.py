@@ -15,8 +15,15 @@ cta_text = st.text_input("Enter CTA text (e.g. Visit Us Today):")
 contact = st.text_input("Enter phone number or website link:")
 
 # Generate button
+
+
+
+st.write("Upload your photo...")
+uploaded_file = st.file_uploader(...)
+text = st.text_input(...)
+cta_text = st.text_input(...)
+contact = st.text_input(...)
 if st.button("Generate Poster"):
-    # all your functions run here
     pass
 
 
