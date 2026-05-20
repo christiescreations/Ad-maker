@@ -10,8 +10,25 @@ cta_text = st.text_input("Enter CTA text (e.g. Visit Us Today):")
 contact = st.text_input("Enter phone number or website link:")
 
 if st.button("Generate Poster"):
-    pass
-
+    if uploaded_file and text:
+        with open("temp_image.jpg", "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        
+        img, output_path, text_fill_color, font_path = render_text_on_image(
+            "temp_image.jpg", text
+        )
+        
+        bg = get_dominant_color("temp_image.jpg")
+        fonts = suggest_font_style(bg[0], bg[1], bg[2], analyze_text_emotion(text))
+        selected_font = fonts[0]
+        
+        img = render_cta(
+            img, cta_text, contact, text_fill_color, bg, selected_font, font_path
+        )
+        
+        st.image(img, caption="Your Generated Poster")
+    else:
+        st.warning("Please upload an image and enter your main text.")
 import os
 import requests
 import random
