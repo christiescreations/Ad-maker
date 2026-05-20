@@ -19,6 +19,14 @@ from PIL import Image, ImageDraw, ImageFont
 from sklearn.cluster import KMeans
 from io import BytesIO
 
+uploaded_file = st.file_uploader("Upload your image", type=["jpg", "jpeg", "png"])
+text = st.text_input("Enter main text:")
+cta_text = st.text_input("Enter CTA text (e.g. Visit Us Today):")
+contact = st.text_input("Enter phone number or website link:")
+
+if st.button("Generate Poster"):
+    pass
+
 
 api_key = st.secrets["GOOGLE_FONTS_API_KEY"]
 
