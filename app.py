@@ -315,11 +315,30 @@ if st.button("Generate Poster"):
         bg = get_dominant_color("temp_image.jpg")
         fonts = suggest_font_style(bg[0], bg[1], bg[2], analyze_text_emotion(text))
         selected_font = fonts[0]
+        emotion = analyze_text_emotion(text)
+        position = suggest_position("temp_image.jpg", emotion)
+        hex_color = rgb_to_hex(text_fill_color[0], text_fill_color[1], text_fill_color[2])
+        cmyk = rgb_to_cmyk(text_fill_color[0], text_fill_color[1], text_fill_color[2])
+        bg_hex = rgb_to_hex(bg[0], bg[1], bg[2])
+        bg_cmyk = rgb_to_cmyk(bg[0], bg[1], bg[2])
 
         img = render_cta(
             img, cta_text, contact, text_fill_color, bg, selected_font, font_path
         )
 
         st.image(img, caption="Your Generated Poster")
+
+        st.subheader("Design Analysis")
+        st.write(f"**Emotion detected:** {emotion}")
+        st.write(f"**Text position:** {position}")
+        st.write(f"**Font used:** {selected_font}")
+        st.write(f"**Top 3 suggested fonts:** {', '.join(fonts)}")
+        st.write(f"**Font color RGB:** {text_fill_color}")
+        st.write(f"**Font color HEX:** {hex_color}")
+        st.write(f"**Font color CMYK:** C={cmyk[0]}, M={cmyk[1]}, Y={cmyk[2]}, K={cmyk[3]}")
+        st.write(f"**Background RGB:** {bg}")
+        st.write(f"**Background HEX:** {bg_hex}")
+        st.write(f"**Background CMYK:** C={bg_cmyk[0]}, M={bg_cmyk[1]}, Y={bg_cmyk[2]}, K={bg_cmyk[3]}")
     else:
         st.warning("Please upload an image and enter your main text.")
+        
