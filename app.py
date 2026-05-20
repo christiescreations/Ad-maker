@@ -2,27 +2,13 @@ import streamlit as st
 
 st.title("Ad Maker")
 st.write("Welcome to Ad Maker!")
-
-
 st.write("Upload your photo and get science-backed design suggestions")
 
-# Upload image
 uploaded_file = st.file_uploader("Upload your image", type=["jpg", "jpeg", "png"])
-
-# Text inputs
 text = st.text_input("Enter main text:")
 cta_text = st.text_input("Enter CTA text (e.g. Visit Us Today):")
 contact = st.text_input("Enter phone number or website link:")
 
-# Generate button
-
-
-
-st.write("Upload your photo...")
-uploaded_file = st.file_uploader(...)
-text = st.text_input(...)
-cta_text = st.text_input(...)
-contact = st.text_input(...)
 if st.button("Generate Poster"):
     pass
 
@@ -40,7 +26,7 @@ from PIL import Image, ImageDraw, ImageFont
 from sklearn.cluster import KMeans
 from io import BytesIO
 
-import streamlit as st
+
 api_key = st.secrets["GOOGLE_FONTS_API_KEY"]
 
 font_list = [
