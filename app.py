@@ -378,24 +378,78 @@ if st.session_state.get("generated") and uploaded_file and text:
 
     preview = st.empty()
 
-    def render_live(mx, my, cx, cy, bg, text_fill_color, selected_font, font_path):
-        img2 = Image.open("temp_image.jpg").convert('RGB')
-        width2, height2 = img2.size
-        new_main_x = int(width2 * mx / 100)
-        new_main_y = int(height2 * my / 100)
-        font_size2 = max(20, width2 // 20)
-        try:
-            font2 = ImageFont.truetype(f"{selected_font}.ttf", font_size2)
-        except:
-            font2 = ImageFont.load_default()
-        wrap_width2 = max(10, (width2 // font_size2) - 2)
-        wrapped2 = textwrap.fill(text, width=wrap_width2)
-        shadow2 = (255, 255, 255) if text_fill_color == (0, 0, 0) else (0, 0, 0)
-        draw = ImageDraw.Draw(img2)
-        draw.text((new_main_x+2, new_main_y+2), wrapped2, fill=shadow2, font=font2)
-        draw.text((new_main_x, new_main_y), wrapped2, fill=text_fill_color, font=font2)
-        img2 = render_cta(img2, cta_text, contact, text_fill_color, bg, selected_font, font_path)
-        return img2
+ def render_live(mx, my, cx, cy, bg, text_fill_color, selected_font, font_path):
+    img2 = Image.open("temp_image.jpg").convert('RGB')
+    width2, height2 = img2.size
+
+    # main text position from sliders
+    new_main_x = int(width2 * mx / 100)
+    new_main_y = int(height2 * my / 100)
+
+    # CTA position from sliders
+    new_cta_x = int(width2 * cx / 100)
+    new_cta_y = int(height2 * cy / 100)
+
+    font_size2 = max(20, width2 // 20)
+    cta_size = max(16, width2 // 18)
+    ph_size = max(14, width2 // 22)
+
+    # load main font
+    try:
+        font2 = ImageFont.truetype(f"{selected_font}.ttf", font_size2)
+    except:
+        font2 = ImageFont.load_default()
+
+    # load CTA font
+    if selected_font in ["Pacifico", "Dancing Script", "Sacramento", "Pinyon Script",
+                         "Playfair Display", "Bodoni Moda", "EB Garamond", "Lora"]:
+        cta_font_path = "Oswald.ttf"
+    else:
+        cta_font_path = "Playfair Display.ttf"
+    try:
+        cta_font = ImageFont.truetype(cta_font_path, cta_size)
+    except:
+        cta_font = ImageFont.load_default()
+
+    try:
+        ph_font = ImageFont.truetype(font_path, ph_size)
+    except:
+        ph_font = ImageFont.load_default()
+
+    # main text
+    wrap_width2 = max(10, (width2 // font_size2) - 2)
+    wrapped2 = textwrap.fill(text, width=wrap_width2)
+    shadow2 = (255, 255, 255) if text_fill_color == (0, 0, 0) else (0, 0, 0)
+
+    draw = ImageDraw.Draw(img2)
+    draw.text((new_main_x+2, new_main_y+2), wrapped2, fill=shadow2, font=font2)
+    draw.text((new_main_x, new_main_y), wrapped2, fill=text_fill_color, font=font2)
+
+    # CTA color
+    white_contrast = get_contrast_ratio(bg[0], bg[1], bg[2], 255, 255, 255)
+    black_contrast = get_contrast_ratio(bg[0], bg[1], bg[2], 0, 0, 0)
+    if white_contrast > black_contrast:
+        cta_color = (255, 255, 255)
+        cta_shadow = (0, 0, 0)
+    else:
+        cta_color = (0, 0, 0)
+        cta_shadow = (255, 255, 255)
+
+    # draw CTA at slider position
+    draw.text((new_cta_x+2, new_cta_y+2), cta_text, fill=cta_shadow, font=cta_font)
+    draw.text((new_cta_x, new_cta_y), cta_text, fill=cta_color, font=cta_font)
+
+    # draw contact below CTA
+    ph_x = new_cta_x
+    ph_y = new_cta_y + cta_size + 20
+    if contact.startswith("http"):
+        qr = qrcode.make(contact)
+        qr = qr.resize((ph_size * 2, ph_size * 2))
+        img2.paste(qr, (ph_x, ph_y))
+    else:
+        draw.text((ph_x, ph_y), contact, fill=cta_color, font=ph_font)
+
+    return img2
 
     live_img = render_live(main_x, main_y, cta_x_pct, cta_y_pct, bg, text_fill_color, selected_font, font_path)
     preview.image(live_img, caption="Live Preview")
