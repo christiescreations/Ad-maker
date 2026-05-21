@@ -341,4 +341,58 @@ if st.button("Generate Poster"):
         st.write(f"**Background CMYK:** C={bg_cmyk[0]}, M={bg_cmyk[1]}, Y={bg_cmyk[2]}, K={bg_cmyk[3]}")
     else:
         st.warning("Please upload an image and enter your main text.")
-        
+
+
+#move things around
+st.subheader("Adjust Positions")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.write("**Main Text Position**")
+    main_x = st.slider("Main text - Left/Right", 0, 100, 10, key="main_x")
+    main_y = st.slider("Main text - Up/Down", 0, 100, 10, key="main_y")
+
+with col2:
+    st.write("**CTA Position**")
+    cta_x_pct = st.slider("CTA - Left/Right", 0, 100, 70, key="cta_x")
+    cta_y_pct = st.slider("CTA - Up/Down", 0, 100, 80, key="cta_y")
+
+if st.button("Apply New Positions", key="reposition"):
+    img2 = Image.open("temp_image.jpg").convert('RGB')
+    width2, height2 = img2.size
+    
+    # convert percentages to pixels
+    new_main_x = int(width2 * main_x / 100)
+    new_main_y = int(height2 * main_y / 100)
+    new_cta_x = int(width2 * cta_x_pct / 100)
+    new_cta_y = int(height2 * cta_y_pct / 100)
+    
+    img2, output_path2, text_fill_color2, font_path2 = render_text_on_image(
+        "temp_image.jpg", text, manual_pos=None
+    )
+    
+    # override positions
+    draw = ImageDraw.Draw(img2)
+    font_size2 = max(20, width2 // 20)
+    fonts2 = suggest_font_style(bg[0], bg[1], bg[2], emotion)
+    selected_font2 = fonts2[0]
+    try:
+        font2 = ImageFont.truetype(f"{selected_font2}.ttf", font_size2)
+    except:
+        font2 = ImageFont.load_default()
+    
+    wrap_width2 = max(10, (width2 // font_size2) - 2)
+    wrapped2 = textwrap.fill(text, width=wrap_width2)
+    shadow2 = (255,255,255) if text_fill_color2 == (0,0,0) else (0,0,0)
+    
+    draw.text((new_main_x+2, new_main_y+2), wrapped2, fill=shadow2, font=font2)
+    draw.text((new_main_x, new_main_y), wrapped2, fill=text_fill_color2, font=font2)
+    
+    img2 = render_cta(img2, cta_text, contact, text_fill_color2, bg, selected_font2, font_path2)
+    
+    img2.save("output_repositioned.jpg")
+    st.image(img2, caption="Repositioned Poster")
+    
+    with open("output_repositioned.jpg", "rb") as f:
+        st.download_button("Download Poster", f, "poster.jpg", "image/jpeg")
