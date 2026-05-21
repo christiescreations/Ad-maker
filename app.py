@@ -64,41 +64,32 @@ def get_dominant_color(image_path, k=5):  # k=5 to get richer palette
     return tuple(int(x) for x in dominant_color)
 
 
-def suggest_rgb(r, g, b, emotion="neutral"):
-    """
-    Pick a text color that:
-    - Passes WCAG AA (4.5:1) against the background
-    - Is vibrant/colorful when possible (not just black/white)
-    - Is influenced by the emotion
-    """
-    # Define candidate colors per emotion
+def suggest_rgb(bg_r, bg_g, bg_b, emotion="neutral"):
     emotion_palettes = {
         "urgent": [
-            (255, 50, 50),   # red
-            (255, 165, 0),   # orange
-            (255, 220, 0),   # yellow
+            (255, 50, 50),
+            (255, 165, 0),
+            (255, 220, 0),
         ],
         "confident": [
-            (0, 120, 255),   # strong blue
-            (0, 200, 180),   # teal
-            (180, 0, 255),   # purple
+            (0, 120, 255),
+            (0, 200, 180),
+            (180, 0, 255),
         ],
         "warm": [
-            (255, 120, 50),  # warm orange
-            (255, 200, 100), # golden
-            (220, 80, 120),  # rose
+            (255, 120, 50),
+            (255, 200, 100),
+            (220, 80, 120),
         ],
         "neutral": [
-            (80, 180, 255),  # sky blue
-            (100, 220, 120), # mint green
-            (200, 150, 255), # lavender
-            (255, 200, 80),  # warm yellow
+            (80, 180, 255),
+            (100, 220, 120),
+            (200, 150, 255),
+            (255, 200, 80),
         ],
     }
 
     candidates = emotion_palettes.get(emotion, emotion_palettes["neutral"])
-
-    # also always include white and black as fallbacks
     candidates += [(255, 255, 255), (0, 0, 0)]
 
     best_color = None
@@ -106,14 +97,13 @@ def suggest_rgb(r, g, b, emotion="neutral"):
 
     for candidate in candidates:
         cr, cg, cb = candidate
-        contrast = get_contrast_ratio(r, g, b, cr, cg, cb)
+        contrast = get_contrast_ratio(bg_r, bg_g, bg_b, cr, cg, cb)
         if contrast >= 4.5 and contrast > best_contrast:
             best_contrast = contrast
             best_color = candidate
 
-    # if nothing passes 4.5, pick whichever candidate has highest contrast
     if best_color is None:
-        best_color = max(candidates, key=lambda c: get_contrast_ratio(r, g, b, c[0], c[1], c[2]))
+        best_color = max(candidates, key=lambda c: get_contrast_ratio(bg_r, bg_g, bg_b, c[0], c[1], c[2]))
 
     return best_color
 def rgb_to_hex(r, g, b):
