@@ -52,17 +52,26 @@ def is_dark(r, g, b):
 def get_warmth(r, g, b):
     return "warm" if (r - b) > 0 else "cool"
 
-def get_dominant_color(image_path, k=5):  # k=5 to get richer palette
+def get_luminance(r, g, b):
+    r, g, b = r/255, g/255, b/255
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+def get_contrast_ratio(r1, g1, b1, r2, g2, b2):
+    L1 = get_luminance(r1, g1, b1)
+    L2 = get_luminance(r2, g2, b2)
+    lighter = max(L1, L2)
+    darker = min(L1, L2)
+    return (lighter + 0.05) / (darker + 0.05)
+
+def get_dominant_color(image_path, k=5):
     img = Image.open(image_path).convert('RGB')
     img.thumbnail((200, 200))
     pixels = np.array(img).reshape(-1, 3)
     kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
     kmeans.fit(pixels)
-    # pick the most frequent cluster instead of just cluster 0
     counts = np.bincount(kmeans.labels_)
     dominant_color = kmeans.cluster_centers_[np.argmax(counts)].astype(int)
     return tuple(int(x) for x in dominant_color)
-
 
 def suggest_rgb(bg_r, bg_g, bg_b, emotion="neutral"):
     emotion_palettes = {
@@ -88,8 +97,7 @@ def suggest_rgb(bg_r, bg_g, bg_b, emotion="neutral"):
             (255, 200, 80),
         ],
     }
-
-    candidates = emotion_palettes.get(emotion, emotion_palettes["neutral"])
+    candidates = list(emotion_palettes.get(emotion, emotion_palettes["neutral"]))
     candidates += [(255, 255, 255), (0, 0, 0)]
 
     best_color = None
@@ -106,6 +114,7 @@ def suggest_rgb(bg_r, bg_g, bg_b, emotion="neutral"):
         best_color = max(candidates, key=lambda c: get_contrast_ratio(bg_r, bg_g, bg_b, c[0], c[1], c[2]))
 
     return best_color
+
 def rgb_to_hex(r, g, b):
     return f"#{r:02x}{g:02x}{b:02x}".upper()
 
@@ -232,11 +241,9 @@ def render_text_on_image(image_path, text, font_path=None, manual_pos=None):
     img = Image.open(image_path).convert('RGB')
     width, height = img.size
     bg = get_dominant_color(image_path)
-    emotion = analyze_text_emotion(text)                      # get emotion first
-    r, g, b = suggest_rgb(bg[0], bg[1], bg[2], emotion)      # pass emotion in
-    text_fill_color = (r, g, b)
-    ...  # rest stays the same
     emotion = analyze_text_emotion(text)
+    r, g, b = suggest_rgb(bg[0], bg[1], bg[2], emotion)
+    text_fill_color = (r, g, b)
     font_size = max(20, width // 20)
     fonts = suggest_font_style(bg[0], bg[1], bg[2], emotion)
     selected_font = fonts[0]
@@ -311,7 +318,7 @@ def render_cta(img, cta_text, contact, text_fill_color, bg, selected_font, font_
         draw.text((ph_x, ph_y), contact, fill=cta_color, font=ph_font)
     return img
 
-# ── UI — ALWAYS LAST ──────────────────────────────────────────────────────────
+# ── UI ────────────────────────────────────────────────────────────────────────
 st.title("Ad Maker")
 st.write("Welcome to Ad Maker!")
 st.write("Upload your photo and get science-backed design suggestions")
@@ -321,7 +328,6 @@ text = st.text_input("Enter main text:")
 cta_text = st.text_input("Enter CTA text (e.g. Visit Us Today):")
 contact = st.text_input("Enter phone number or website link:")
 
-# move things around
 if st.button("Generate Poster"):
     if uploaded_file and text:
         with open("temp_image.jpg", "wb") as f:
@@ -333,10 +339,9 @@ if st.button("Generate Poster"):
         selected_font = fonts[0]
         position = suggest_position("temp_image.jpg", emotion)
 
-        # ── Generate once and save to session state ────────────────────────
         img, output_path, text_fill_color, font_path = render_text_on_image("temp_image.jpg", text)
         img = render_cta(img, cta_text, contact, text_fill_color, bg, selected_font, font_path)
-        img.save("base_render.jpg")  # save base render
+        img.save("base_render.jpg")
 
         st.session_state["generated"] = True
         st.session_state["bg"] = bg
@@ -350,15 +355,15 @@ if st.button("Generate Poster"):
     else:
         st.warning("Please upload an image and enter your main text.")
 
-# ── RUNS ON EVERY SLIDER DRAG (outside the button block) ──────────────────
+# ── RUNS ON EVERY SLIDER DRAG ─────────────────────────────────────────────────
 if st.session_state.get("generated") and uploaded_file and text:
-    bg             = st.session_state["bg"]
-    emotion        = st.session_state["emotion"]
-    fonts          = st.session_state["fonts"]
-    selected_font  = st.session_state["selected_font"]
-    position       = st.session_state["position"]
+    bg              = st.session_state["bg"]
+    emotion         = st.session_state["emotion"]
+    fonts           = st.session_state["fonts"]
+    selected_font   = st.session_state["selected_font"]
+    position        = st.session_state["position"]
     text_fill_color = st.session_state["text_fill_color"]
-    font_path      = st.session_state["font_path"]
+    font_path       = st.session_state["font_path"]
 
     st.subheader("Adjust Positions")
     col1, col2 = st.columns(2)
@@ -373,35 +378,28 @@ if st.session_state.get("generated") and uploaded_file and text:
 
     preview = st.empty()
 
-    # ── UPDATED: pass everything explicitly ────────────────────────────────
     def render_live(mx, my, cx, cy, bg, text_fill_color, selected_font, font_path):
         img2 = Image.open("temp_image.jpg").convert('RGB')
         width2, height2 = img2.size
         new_main_x = int(width2 * mx / 100)
         new_main_y = int(height2 * my / 100)
-
         font_size2 = max(20, width2 // 20)
         try:
             font2 = ImageFont.truetype(f"{selected_font}.ttf", font_size2)
         except:
             font2 = ImageFont.load_default()
-
         wrap_width2 = max(10, (width2 // font_size2) - 2)
         wrapped2 = textwrap.fill(text, width=wrap_width2)
         shadow2 = (255, 255, 255) if text_fill_color == (0, 0, 0) else (0, 0, 0)
-
         draw = ImageDraw.Draw(img2)
         draw.text((new_main_x+2, new_main_y+2), wrapped2, fill=shadow2, font=font2)
         draw.text((new_main_x, new_main_y), wrapped2, fill=text_fill_color, font=font2)
-
         img2 = render_cta(img2, cta_text, contact, text_fill_color, bg, selected_font, font_path)
         return img2
 
-    # ── UPDATED: pass all variables into the call ──────────────────────────
     live_img = render_live(main_x, main_y, cta_x_pct, cta_y_pct, bg, text_fill_color, selected_font, font_path)
     preview.image(live_img, caption="Live Preview")
 
-    # ── DESIGN ANALYSIS ────────────────────────────────────────────────────
     hex_color = rgb_to_hex(text_fill_color[0], text_fill_color[1], text_fill_color[2])
     cmyk      = rgb_to_cmyk(text_fill_color[0], text_fill_color[1], text_fill_color[2])
     bg_hex    = rgb_to_hex(bg[0], bg[1], bg[2])
@@ -419,7 +417,6 @@ if st.session_state.get("generated") and uploaded_file and text:
     st.write(f"**Background HEX:** {bg_hex}")
     st.write(f"**Background CMYK:** C={bg_cmyk[0]}, M={bg_cmyk[1]}, Y={bg_cmyk[2]}, K={bg_cmyk[3]}")
 
-    # ── DOWNLOAD ───────────────────────────────────────────────────────────
     live_img.save("output_repositioned.jpg")
     with open("output_repositioned.jpg", "rb") as f:
         st.download_button("Download Poster", f, "poster.jpg", "image/jpeg")
