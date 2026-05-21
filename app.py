@@ -305,11 +305,12 @@ contact = st.text_input("Enter phone number or website link:")
 
 if st.button("Generate Poster"):
     if uploaded_file and text:
-        ...all your code...
-        st.image(img, caption="Your Generated Poster")
-        ...design analysis...
-    else:
-        st.warning("Please upload an image and enter your main text.")
+        with open("temp_image.jpg", "wb") as f:
+            f.write(uploaded_file.getbuffer())
+
+        img, output_path, text_fill_color, font_path = render_text_on_image(
+            "temp_image.jpg", text
+        )
 
         bg = get_dominant_color("temp_image.jpg")
         fonts = suggest_font_style(bg[0], bg[1], bg[2], analyze_text_emotion(text))
@@ -337,8 +338,8 @@ if st.button("Generate Poster"):
         st.write(f"**Background RGB:** {bg}")
         st.write(f"**Background HEX:** {bg_hex}")
         st.write(f"**Background CMYK:** C={bg_cmyk[0]}, M={bg_cmyk[1]}, Y={bg_cmyk[2]}, K={bg_cmyk[3]}")
-        else:
-             st.warning("Please upload an image and enter your main text.")
+    else:
+        st.warning("Please upload an image and enter your main text.")
         
 #move things around
 st.subheader("Adjust Positions")
