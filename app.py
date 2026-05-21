@@ -310,86 +310,96 @@ if st.button("Generate Poster"):
             f.write(uploaded_file.getbuffer())
 
         bg = get_dominant_color("temp_image.jpg")
-        fonts = suggest_font_style(bg[0], bg[1], bg[2], analyze_text_emotion(text))
-        selected_font = fonts[0]
         emotion = analyze_text_emotion(text)
+        fonts = suggest_font_style(bg[0], bg[1], bg[2], emotion)
+        selected_font = fonts[0]
         position = suggest_position("temp_image.jpg", emotion)
-        hex_color_val = rgb_to_hex(*[0,0,0])  # placeholder
-        cmyk = rgb_to_cmyk(*[0,0,0])
 
-        # ── ADJUST POSITIONS (above analysis) ─────────────────────────────
-        st.subheader("Adjust Positions")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write("**Main Text Position**")
-            main_x = st.slider("Main text - Left/Right", 0, 100, 10, key="main_x")
-            main_y = st.slider("Main text - Up/Down", 0, 100, 10, key="main_y")
-        with col2:
-            st.write("**CTA Position**")
-            cta_x_pct = st.slider("CTA - Left/Right", 0, 100, 70, key="cta_x")
-            cta_y_pct = st.slider("CTA - Up/Down", 0, 100, 80, key="cta_y")
+        # ── Generate once and save to session state ────────────────────────
+        img, output_path, text_fill_color, font_path = render_text_on_image("temp_image.jpg", text)
+        img = render_cta(img, cta_text, contact, text_fill_color, bg, selected_font, font_path)
+        img.save("base_render.jpg")  # save base render
 
-        # ── LIVE PREVIEW PLACEHOLDER ───────────────────────────────────────
-        preview = st.empty()
-
-        def render_live(mx, my, cx, cy):
-            img2 = Image.open("temp_image.jpg").convert('RGB')
-            width2, height2 = img2.size
-            new_main_x = int(width2 * mx / 100)
-            new_main_y = int(height2 * my / 100)
-            new_cta_x  = int(width2 * cx / 100)
-            new_cta_y  = int(height2 * cy / 100)
-
-            draw = ImageDraw.Draw(img2)
-            font_size2 = max(20, width2 // 20)
-            fonts2 = suggest_font_style(bg[0], bg[1], bg[2], emotion)
-            selected_font2 = fonts2[0]
-            try:
-                font2 = ImageFont.truetype(f"{selected_font2}.ttf", font_size2)
-            except:
-                font2 = ImageFont.load_default()
-
-            wrap_width2 = max(10, (width2 // font_size2) - 2)
-            wrapped2 = textwrap.fill(text, width=wrap_width2)
-
-            img_temp, _, text_fill_color2, font_path2 = render_text_on_image("temp_image.jpg", text)
-            shadow2 = (255,255,255) if text_fill_color2 == (0,0,0) else (0,0,0)
-
-            draw.text((new_main_x+2, new_main_y+2), wrapped2, fill=shadow2, font=font2)
-            draw.text((new_main_x, new_main_y), wrapped2, fill=text_fill_color2, font=font2)
-
-            img2 = render_cta(img2, cta_text, contact, text_fill_color2, bg, selected_font2, font_path2)
-            return img2, text_fill_color2
-
-        # render immediately as sliders change
-        live_img, text_fill_color = render_live(main_x, main_y, cta_x_pct, cta_y_pct)
-        preview.image(live_img, caption="Live Preview")
-
-        # ── DESIGN ANALYSIS (below sliders) ───────────────────────────────
-        hex_color = rgb_to_hex(text_fill_color[0], text_fill_color[1], text_fill_color[2])
-        cmyk      = rgb_to_cmyk(text_fill_color[0], text_fill_color[1], text_fill_color[2])
-        bg_hex    = rgb_to_hex(bg[0], bg[1], bg[2])
-        bg_cmyk   = rgb_to_cmyk(bg[0], bg[1], bg[2])
-
-        st.subheader("Design Analysis")
-        st.write(f"**Emotion detected:** {emotion}")
-        st.write(f"**Text position:** {position}")
-        st.write(f"**Font used:** {selected_font}")
-        st.write(f"**Top 3 suggested fonts:** {', '.join(fonts)}")
-        st.write(f"**Font color RGB:** {text_fill_color}")
-        st.write(f"**Font color HEX:** {hex_color}")
-        st.write(f"**Font color CMYK:** C={cmyk[0]}, M={cmyk[1]}, Y={cmyk[2]}, K={cmyk[3]}")
-        st.write(f"**Background RGB:** {bg}")
-        st.write(f"**Background HEX:** {bg_hex}")
-        st.write(f"**Background CMYK:** C={bg_cmyk[0]}, M={bg_cmyk[1]}, Y={bg_cmyk[2]}, K={bg_cmyk[3]}")
-
-        # ── DOWNLOAD ───────────────────────────────────────────────────────
-        live_img.save("output_repositioned.jpg")
-        with open("output_repositioned.jpg", "rb") as f:
-            st.download_button("Download Poster", f, "poster.jpg", "image/jpeg")
+        st.session_state["generated"] = True
+        st.session_state["bg"] = bg
+        st.session_state["emotion"] = emotion
+        st.session_state["fonts"] = fonts
+        st.session_state["selected_font"] = selected_font
+        st.session_state["position"] = position
+        st.session_state["text_fill_color"] = text_fill_color
+        st.session_state["font_path"] = font_path
 
     else:
         st.warning("Please upload an image and enter your main text.")
 
+# ── RUNS ON EVERY SLIDER DRAG (outside the button block) ──────────────────
+if st.session_state.get("generated") and uploaded_file and text:
+    bg             = st.session_state["bg"]
+    emotion        = st.session_state["emotion"]
+    fonts          = st.session_state["fonts"]
+    selected_font  = st.session_state["selected_font"]
+    position       = st.session_state["position"]
+    text_fill_color = st.session_state["text_fill_color"]
+    font_path      = st.session_state["font_path"]
 
+    st.subheader("Adjust Positions")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write("**Main Text Position**")
+        main_x = st.slider("Main text - Left/Right", 0, 100, 10, key="main_x")
+        main_y = st.slider("Main text - Up/Down", 0, 100, 10, key="main_y")
+    with col2:
+        st.write("**CTA Position**")
+        cta_x_pct = st.slider("CTA - Left/Right", 0, 100, 70, key="cta_x")
+        cta_y_pct = st.slider("CTA - Up/Down", 0, 100, 80, key="cta_y")
 
+    preview = st.empty()
+
+    def render_live(mx, my, cx, cy):
+        img2 = Image.open("temp_image.jpg").convert('RGB')  # always start from original
+        width2, height2 = img2.size
+        new_main_x = int(width2 * mx / 100)
+        new_main_y = int(height2 * my / 100)
+
+        font_size2 = max(20, width2 // 20)
+        try:
+            font2 = ImageFont.truetype(f"{selected_font}.ttf", font_size2)
+        except:
+            font2 = ImageFont.load_default()
+
+        wrap_width2 = max(10, (width2 // font_size2) - 2)
+        wrapped2 = textwrap.fill(text, width=wrap_width2)
+        shadow2 = (255, 255, 255) if text_fill_color == (0, 0, 0) else (0, 0, 0)
+
+        draw = ImageDraw.Draw(img2)
+        draw.text((new_main_x+2, new_main_y+2), wrapped2, fill=shadow2, font=font2)
+        draw.text((new_main_x, new_main_y), wrapped2, fill=text_fill_color, font=font2)
+
+        img2 = render_cta(img2, cta_text, contact, text_fill_color, bg, selected_font, font_path)
+        return img2
+
+    live_img = render_live(main_x, main_y, cta_x_pct, cta_y_pct)
+    preview.image(live_img, caption="Live Preview")
+
+    # ── DESIGN ANALYSIS ────────────────────────────────────────────────────
+    hex_color = rgb_to_hex(text_fill_color[0], text_fill_color[1], text_fill_color[2])
+    cmyk      = rgb_to_cmyk(text_fill_color[0], text_fill_color[1], text_fill_color[2])
+    bg_hex    = rgb_to_hex(bg[0], bg[1], bg[2])
+    bg_cmyk   = rgb_to_cmyk(bg[0], bg[1], bg[2])
+
+    st.subheader("Design Analysis")
+    st.write(f"**Emotion detected:** {emotion}")
+    st.write(f"**Text position:** {position}")
+    st.write(f"**Font used:** {selected_font}")
+    st.write(f"**Top 3 suggested fonts:** {', '.join(fonts)}")
+    st.write(f"**Font color RGB:** {text_fill_color}")
+    st.write(f"**Font color HEX:** {hex_color}")
+    st.write(f"**Font color CMYK:** C={cmyk[0]}, M={cmyk[1]}, Y={cmyk[2]}, K={cmyk[3]}")
+    st.write(f"**Background RGB:** {bg}")
+    st.write(f"**Background HEX:** {bg_hex}")
+    st.write(f"**Background CMYK:** C={bg_cmyk[0]}, M={bg_cmyk[1]}, Y={bg_cmyk[2]}, K={bg_cmyk[3]}")
+
+    # ── DOWNLOAD ───────────────────────────────────────────────────────────
+    live_img.save("output_repositioned.jpg")
+    with open("output_repositioned.jpg", "rb") as f:
+        st.download_button("Download Poster", f, "poster.jpg", "image/jpeg")
