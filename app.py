@@ -356,27 +356,33 @@ if st.button("Generate Poster"):
         st.warning("Please upload an image and enter your main text.")
 
 # ── RUNS ON EVERY SLIDER DRAG ─────────────────────────────────────────────────
-if st.session_state.get("generated") and uploaded_file and text:
-    bg              = st.session_state["bg"]
-    emotion         = st.session_state["emotion"]
-    fonts           = st.session_state["fonts"]
-    selected_font   = st.session_state["selected_font"]
-    position        = st.session_state["position"]
-    text_fill_color = st.session_state["text_fill_color"]
-    font_path       = st.session_state["font_path"]
+if st.button("Generate Poster"):
+    if uploaded_file and text:
+        with open("temp_image.jpg", "wb") as f:
+            f.write(uploaded_file.getbuffer())
 
-    st.subheader("Adjust Positions")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write("**Main Text Position**")
-        main_x = st.slider("Main text - Left/Right", 0, 100, 10, key="main_x")
-        main_y = st.slider("Main text - Up/Down", 0, 100, 10, key="main_y")
-    with col2:
-        st.write("**CTA Position**")
-        cta_x_pct = st.slider("CTA - Left/Right", 0, 100, 70, key="cta_x")
-        cta_y_pct = st.slider("CTA - Up/Down", 0, 100, 80, key="cta_y")
+        bg = get_dominant_color("temp_image.jpg")
+        emotion = analyze_text_emotion(text)
+        fonts = suggest_font_style(bg[0], bg[1], bg[2], emotion)
+        selected_font = fonts[0]
+        position = suggest_position("temp_image.jpg", emotion)
 
-   preview = st.empty()
+        img, output_path, text_fill_color, font_path = render_text_on_image("temp_image.jpg", text)
+        img = render_cta(img, cta_text, contact, text_fill_color, bg, selected_font, font_path)
+        img.save("base_render.jpg")
+
+        st.session_state["generated"] = True
+        st.session_state["bg"] = bg
+        st.session_state["emotion"] = emotion
+        st.session_state["fonts"] = fonts
+        st.session_state["selected_font"] = selected_font
+        st.session_state["position"] = position
+        st.session_state["text_fill_color"] = text_fill_color
+        st.session_state["font_path"] = font_path
+
+    else:
+        st.warning("Please upload an image and enter your main text.")
+
 
 def render_live(mx, my, cx, cy, bg, text_fill_color, selected_font, font_path):
     img2 = Image.open("temp_image.jpg").convert('RGB')
@@ -442,13 +448,35 @@ def render_live(mx, my, cx, cy, bg, text_fill_color, selected_font, font_path):
 
     return img2
 
-live_img = render_live(main_x, main_y, cta_x_pct, cta_y_pct, bg, text_fill_color, selected_font, font_path)
-preview.image(live_img, caption="Live Preview")
+
+if st.session_state.get("generated") and uploaded_file and text:
+    bg = st.session_state["bg"]
+    emotion = st.session_state["emotion"]
+    fonts = st.session_state["fonts"]
+    selected_font = st.session_state["selected_font"]
+    position = st.session_state["position"]
+    text_fill_color = st.session_state["text_fill_color"]
+    font_path = st.session_state["font_path"]
+
+    st.subheader("Adjust Positions")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write("**Main Text Position**")
+        main_x = st.slider("Main text - Left/Right", 0, 100, 10, key="main_x")
+        main_y = st.slider("Main text - Up/Down", 0, 100, 10, key="main_y")
+    with col2:
+        st.write("**CTA Position**")
+        cta_x_pct = st.slider("CTA - Left/Right", 0, 100, 70, key="cta_x")
+        cta_y_pct = st.slider("CTA - Up/Down", 0, 100, 80, key="cta_y")
+
+    preview = st.empty()
+    live_img = render_live(main_x, main_y, cta_x_pct, cta_y_pct, bg, text_fill_color, selected_font, font_path)
+    preview.image(live_img, caption="Live Preview")
 
     hex_color = rgb_to_hex(text_fill_color[0], text_fill_color[1], text_fill_color[2])
-    cmyk      = rgb_to_cmyk(text_fill_color[0], text_fill_color[1], text_fill_color[2])
-    bg_hex    = rgb_to_hex(bg[0], bg[1], bg[2])
-    bg_cmyk   = rgb_to_cmyk(bg[0], bg[1], bg[2])
+    cmyk = rgb_to_cmyk(text_fill_color[0], text_fill_color[1], text_fill_color[2])
+    bg_hex = rgb_to_hex(bg[0], bg[1], bg[2])
+    bg_cmyk = rgb_to_cmyk(bg[0], bg[1], bg[2])
 
     st.subheader("Design Analysis")
     st.write(f"**Emotion detected:** {emotion}")
