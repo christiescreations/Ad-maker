@@ -381,20 +381,20 @@ if st.button("Apply New Positions", key="reposition"):
     with open("output_repositioned.jpg", "rb") as f:
         st.download_button("Download Poster", f, "poster.jpg", "image/jpeg")
 
-        st.image(img, caption="Your Generated Poster")
+st.image(img, caption="Your Generated Poster")
 
-        st.subheader("Design Analysis")
-        st.write(f"**Emotion detected:** {emotion}")
-        st.write(f"**Text position:** {position}")
-        st.write(f"**Font used:** {selected_font}")
-        st.write(f"**Top 3 suggested fonts:** {', '.join(fonts)}")
-        st.write(f"**Font color RGB:** {text_fill_color}")
-        st.write(f"**Font color HEX:** {hex_color}")
-        st.write(f"**Font color CMYK:** C={cmyk[0]}, M={cmyk[1]}, Y={cmyk[2]}, K={cmyk[3]}")
-        st.write(f"**Background RGB:** {bg}")
-        st.write(f"**Background HEX:** {bg_hex}")
-        st.write(f"**Background CMYK:** C={bg_cmyk[0]}, M={bg_cmyk[1]}, Y={bg_cmyk[2]}, K={bg_cmyk[3]}")
-    else:
-        st.warning("Please upload an image and enter your main text.")
+st.subheader("Design Analysis")
+st.write(f"**Emotion detected:** {emotion}")
+st.write(f"**Text position:** {position}")
+st.write(f"**Font used:** {selected_font}")
+st.write(f"**Top 3 suggested fonts:** {', '.join(fonts)}")
+st.write(f"**Font color RGB:** {text_fill_color}")
+st.write(f"**Font color HEX:** {hex_color}")
+st.write(f"**Font color CMYK:** C={cmyk[0]}, M={cmyk[1]}, Y={cmyk[2]}, K={cmyk[3]}")
+st.write(f"**Background RGB:** {bg}")
+st.write(f"**Background HEX:** {bg_hex}")
+st.write(f"**Background CMYK:** C={bg_cmyk[0]}, M={bg_cmyk[1]}, Y={bg_cmyk[2]}, K={bg_cmyk[3]}")
+else:
+    st.warning("Please upload an image and enter your main text.")
 
 
