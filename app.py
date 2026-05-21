@@ -355,34 +355,6 @@ if st.button("Generate Poster"):
     else:
         st.warning("Please upload an image and enter your main text.")
 
-# ── RUNS ON EVERY SLIDER DRAG ─────────────────────────────────────────────────
-if st.button("Generate Poster"):
-    if uploaded_file and text:
-        with open("temp_image.jpg", "wb") as f:
-            f.write(uploaded_file.getbuffer())
-
-        bg = get_dominant_color("temp_image.jpg")
-        emotion = analyze_text_emotion(text)
-        fonts = suggest_font_style(bg[0], bg[1], bg[2], emotion)
-        selected_font = fonts[0]
-        position = suggest_position("temp_image.jpg", emotion)
-
-        img, output_path, text_fill_color, font_path = render_text_on_image("temp_image.jpg", text)
-        img = render_cta(img, cta_text, contact, text_fill_color, bg, selected_font, font_path)
-        img.save("base_render.jpg")
-
-        st.session_state["generated"] = True
-        st.session_state["bg"] = bg
-        st.session_state["emotion"] = emotion
-        st.session_state["fonts"] = fonts
-        st.session_state["selected_font"] = selected_font
-        st.session_state["position"] = position
-        st.session_state["text_fill_color"] = text_fill_color
-        st.session_state["font_path"] = font_path
-
-    else:
-        st.warning("Please upload an image and enter your main text.")
-
 
 def render_live(mx, my, cx, cy, bg, text_fill_color, selected_font, font_path):
     img2 = Image.open("temp_image.jpg").convert('RGB')
