@@ -52,44 +52,70 @@ def is_dark(r, g, b):
 def get_warmth(r, g, b):
     return "warm" if (r - b) > 0 else "cool"
 
-def get_dominant_color(image_path, k=1):
+def get_dominant_color(image_path, k=5):  # k=5 to get richer palette
     img = Image.open(image_path).convert('RGB')
     img.thumbnail((200, 200))
     pixels = np.array(img).reshape(-1, 3)
     kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
     kmeans.fit(pixels)
-    dominant_color = kmeans.cluster_centers_[0].astype(int)
+    # pick the most frequent cluster instead of just cluster 0
+    counts = np.bincount(kmeans.labels_)
+    dominant_color = kmeans.cluster_centers_[np.argmax(counts)].astype(int)
     return tuple(int(x) for x in dominant_color)
 
-def get_luminance(r, g, b):
-    r, g, b = r/255, g/255, b/255
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b
 
-def get_contrast_ratio(r1, g1, b1, r2, g2, b2):
-    L1 = get_luminance(r1, g1, b1)
-    L2 = get_luminance(r2, g2, b2)
-    lighter = max(L1, L2)
-    darker = min(L1, L2)
-    return (lighter + 0.05) / (darker + 0.05)
+def suggest_rgb(r, g, b, emotion="neutral"):
+    """
+    Pick a text color that:
+    - Passes WCAG AA (4.5:1) against the background
+    - Is vibrant/colorful when possible (not just black/white)
+    - Is influenced by the emotion
+    """
+    # Define candidate colors per emotion
+    emotion_palettes = {
+        "urgent": [
+            (255, 50, 50),   # red
+            (255, 165, 0),   # orange
+            (255, 220, 0),   # yellow
+        ],
+        "confident": [
+            (0, 120, 255),   # strong blue
+            (0, 200, 180),   # teal
+            (180, 0, 255),   # purple
+        ],
+        "warm": [
+            (255, 120, 50),  # warm orange
+            (255, 200, 100), # golden
+            (220, 80, 120),  # rose
+        ],
+        "neutral": [
+            (80, 180, 255),  # sky blue
+            (100, 220, 120), # mint green
+            (200, 150, 255), # lavender
+            (255, 200, 80),  # warm yellow
+        ],
+    }
 
-def suggest_rgb(r, g, b):
-    brightness = (r + g + b) / 3
-    if brightness < 30:
-        return (255, 255, 255)
-    elif brightness > 220:
-        return (0, 0, 0)
-    else:
-        h, s, v = colorsys.rgb_to_hsv(r/255, g/255, b/255)
-        h = (h + 0.5) % 1
-        v = max(v, 0.8)
-        r2, g2, b2 = colorsys.hsv_to_rgb(h, s, v)
-        contrast = get_contrast_ratio(r, g, b, int(r2*255), int(g2*255), int(b2*255))
-        if contrast < 4.5:
-            white_contrast = get_contrast_ratio(r, g, b, 255, 255, 255)
-            black_contrast = get_contrast_ratio(r, g, b, 0, 0, 0)
-            return (255, 255, 255) if white_contrast > black_contrast else (0, 0, 0)
-        return (int(r2 * 255), int(g2 * 255), int(b2 * 255))
+    candidates = emotion_palettes.get(emotion, emotion_palettes["neutral"])
 
+    # also always include white and black as fallbacks
+    candidates += [(255, 255, 255), (0, 0, 0)]
+
+    best_color = None
+    best_contrast = 0
+
+    for candidate in candidates:
+        cr, cg, cb = candidate
+        contrast = get_contrast_ratio(r, g, b, cr, cg, cb)
+        if contrast >= 4.5 and contrast > best_contrast:
+            best_contrast = contrast
+            best_color = candidate
+
+    # if nothing passes 4.5, pick whichever candidate has highest contrast
+    if best_color is None:
+        best_color = max(candidates, key=lambda c: get_contrast_ratio(r, g, b, c[0], c[1], c[2]))
+
+    return best_color
 def rgb_to_hex(r, g, b):
     return f"#{r:02x}{g:02x}{b:02x}".upper()
 
@@ -216,8 +242,10 @@ def render_text_on_image(image_path, text, font_path=None, manual_pos=None):
     img = Image.open(image_path).convert('RGB')
     width, height = img.size
     bg = get_dominant_color(image_path)
-    r, g, b = suggest_rgb(bg[0], bg[1], bg[2])
+    emotion = analyze_text_emotion(text)                      # get emotion first
+    r, g, b = suggest_rgb(bg[0], bg[1], bg[2], emotion)      # pass emotion in
     text_fill_color = (r, g, b)
+    ...  # rest stays the same
     emotion = analyze_text_emotion(text)
     font_size = max(20, width // 20)
     fonts = suggest_font_style(bg[0], bg[1], bg[2], emotion)
