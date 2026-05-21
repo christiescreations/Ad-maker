@@ -376,17 +376,14 @@ if st.session_state.get("generated") and uploaded_file and text:
         cta_x_pct = st.slider("CTA - Left/Right", 0, 100, 70, key="cta_x")
         cta_y_pct = st.slider("CTA - Up/Down", 0, 100, 80, key="cta_y")
 
-    preview = st.empty()
+   preview = st.empty()
 
- def render_live(mx, my, cx, cy, bg, text_fill_color, selected_font, font_path):
+def render_live(mx, my, cx, cy, bg, text_fill_color, selected_font, font_path):
     img2 = Image.open("temp_image.jpg").convert('RGB')
     width2, height2 = img2.size
 
-    # main text position from sliders
     new_main_x = int(width2 * mx / 100)
     new_main_y = int(height2 * my / 100)
-
-    # CTA position from sliders
     new_cta_x = int(width2 * cx / 100)
     new_cta_y = int(height2 * cy / 100)
 
@@ -394,13 +391,11 @@ if st.session_state.get("generated") and uploaded_file and text:
     cta_size = max(16, width2 // 18)
     ph_size = max(14, width2 // 22)
 
-    # load main font
     try:
         font2 = ImageFont.truetype(f"{selected_font}.ttf", font_size2)
     except:
         font2 = ImageFont.load_default()
 
-    # load CTA font
     if selected_font in ["Pacifico", "Dancing Script", "Sacramento", "Pinyon Script",
                          "Playfair Display", "Bodoni Moda", "EB Garamond", "Lora"]:
         cta_font_path = "Oswald.ttf"
@@ -416,7 +411,6 @@ if st.session_state.get("generated") and uploaded_file and text:
     except:
         ph_font = ImageFont.load_default()
 
-    # main text
     wrap_width2 = max(10, (width2 // font_size2) - 2)
     wrapped2 = textwrap.fill(text, width=wrap_width2)
     shadow2 = (255, 255, 255) if text_fill_color == (0, 0, 0) else (0, 0, 0)
@@ -425,7 +419,6 @@ if st.session_state.get("generated") and uploaded_file and text:
     draw.text((new_main_x+2, new_main_y+2), wrapped2, fill=shadow2, font=font2)
     draw.text((new_main_x, new_main_y), wrapped2, fill=text_fill_color, font=font2)
 
-    # CTA color
     white_contrast = get_contrast_ratio(bg[0], bg[1], bg[2], 255, 255, 255)
     black_contrast = get_contrast_ratio(bg[0], bg[1], bg[2], 0, 0, 0)
     if white_contrast > black_contrast:
@@ -435,11 +428,9 @@ if st.session_state.get("generated") and uploaded_file and text:
         cta_color = (0, 0, 0)
         cta_shadow = (255, 255, 255)
 
-    # draw CTA at slider position
     draw.text((new_cta_x+2, new_cta_y+2), cta_text, fill=cta_shadow, font=cta_font)
     draw.text((new_cta_x, new_cta_y), cta_text, fill=cta_color, font=cta_font)
 
-    # draw contact below CTA
     ph_x = new_cta_x
     ph_y = new_cta_y + cta_size + 20
     if contact.startswith("http"):
@@ -451,8 +442,8 @@ if st.session_state.get("generated") and uploaded_file and text:
 
     return img2
 
-    live_img = render_live(main_x, main_y, cta_x_pct, cta_y_pct, bg, text_fill_color, selected_font, font_path)
-    preview.image(live_img, caption="Live Preview")
+live_img = render_live(main_x, main_y, cta_x_pct, cta_y_pct, bg, text_fill_color, selected_font, font_path)
+preview.image(live_img, caption="Live Preview")
 
     hex_color = rgb_to_hex(text_fill_color[0], text_fill_color[1], text_fill_color[2])
     cmyk      = rgb_to_cmyk(text_fill_color[0], text_fill_color[1], text_fill_color[2])
