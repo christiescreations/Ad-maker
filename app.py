@@ -383,8 +383,9 @@ if st.session_state.get("generated") and uploaded_file and text:
 
     preview = st.empty()
 
-    def render_live(mx, my, cx, cy):
-        img2 = Image.open("temp_image.jpg").convert('RGB')  # always start from original
+    # ── UPDATED: pass everything explicitly ────────────────────────────────
+    def render_live(mx, my, cx, cy, bg, text_fill_color, selected_font, font_path):
+        img2 = Image.open("temp_image.jpg").convert('RGB')
         width2, height2 = img2.size
         new_main_x = int(width2 * mx / 100)
         new_main_y = int(height2 * my / 100)
@@ -406,7 +407,8 @@ if st.session_state.get("generated") and uploaded_file and text:
         img2 = render_cta(img2, cta_text, contact, text_fill_color, bg, selected_font, font_path)
         return img2
 
-    live_img = render_live(main_x, main_y, cta_x_pct, cta_y_pct)
+    # ── UPDATED: pass all variables into the call ──────────────────────────
+    live_img = render_live(main_x, main_y, cta_x_pct, cta_y_pct, bg, text_fill_color, selected_font, font_path)
     preview.image(live_img, caption="Live Preview")
 
     # ── DESIGN ANALYSIS ────────────────────────────────────────────────────
