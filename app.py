@@ -73,30 +73,23 @@ def get_dominant_color(image_path, k=5):
     dominant_color = kmeans.cluster_centers_[np.argmax(counts)].astype(int)
     return tuple(int(x) for x in dominant_color)
 
-def suggest_rgb(bg_r, bg_g, bg_b, emotion="neutral"):
-    emotion_palettes = {
-        "urgent": [
-            (255, 50, 50),
-            (255, 165, 0),
-            (255, 220, 0),
-        ],
-        "confident": [
-            (0, 120, 255),
-            (0, 200, 180),
-            (180, 0, 255),
-        ],
-        "warm": [
-            (255, 120, 50),
-            (255, 200, 100),
-            (220, 80, 120),
-        ],
-        "neutral": [
-            (80, 180, 255),
-            (100, 220, 120),
-            (200, 150, 255),
-            (255, 200, 80),
-        ],
-    }
+def suggest_rgb(r, g, b):
+    white_contrast = get_contrast_ratio(r, g, b, 255, 255, 255)
+    black_contrast = get_contrast_ratio(r, g, b, 0, 0, 0)
+    
+    # try complementary first
+    h, s, v = colorsys.rgb_to_hsv(r/255, g/255, b/255)
+    h = (h + 0.5) % 1
+    v = max(v, 0.8)
+    r2, g2, b2 = colorsys.hsv_to_rgb(h, s, v)
+    comp_contrast = get_contrast_ratio(r, g, b, int(r2*255), int(g2*255), int(b2*255))
+    
+    if comp_contrast >= 4.5:
+        return (int(r2*255), int(g2*255), int(b2*255))
+    elif white_contrast > black_contrast:
+        return (255, 255, 255)
+    else:
+        return (0, 0, 0)
     candidates = list(emotion_palettes.get(emotion, emotion_palettes["neutral"]))
     candidates += [(255, 255, 255), (0, 0, 0)]
 
