@@ -318,8 +318,11 @@ def render_cta(img, cta_text, contact, text_fill_color, bg, selected_font, font_
     return img
 
 # ── LIVE REPOSITION HELPER ────────────────────────────────────────────────────
-def render_live(mx, my, cx, cy, bg, text_fill_color, selected_font, font_path, text, cta_text, contact):
-    img2 = Image.open("temp_image.jpg").convert('RGB')
+def render_live(mx, my, cx, cy, bg, text_fill_color, selected_font, font_path, text, cta_text, contact, image_bytes=None):
+    if image_bytes:
+        img2 = Image.open(BytesIO(image_bytes)).convert('RGB')
+    else:
+        img2 = Image.open("temp_image.jpg").convert('RGB')
     width2, height2 = img2.size
 
     new_main_x = int(width2 * mx / 100)
@@ -388,8 +391,11 @@ contact  = st.text_input("Enter phone number or website link:", key="contact")
 
 if st.button("Generate Poster", key="generate"):
     if uploaded_file and text:
+        image_bytes = uploaded_file.getbuffer().tobytes()
         with open("temp_image.jpg", "wb") as f:
-            f.write(uploaded_file.getbuffer())
+            f.write(image_bytes)
+
+        st.session_state["image_bytes"] = image_bytes
 
         img, output_path, text_fill_color, font_path, selected_font, emotion = render_text_on_image(
             "temp_image.jpg", text
@@ -415,7 +421,7 @@ if st.button("Generate Poster", key="generate"):
         st.warning("Please upload an image and enter your main text.")
 
 # ── RESULTS ───────────────────────────────────────────────────────────────────
-if st.session_state.get("generated") and uploaded_file and text:
+if st.session_state.get("generated") and st.session_state.get("image_bytes"):
     bg            = st.session_state["bg"]
     emotion       = st.session_state["emotion"]
     fonts         = st.session_state["fonts"]
@@ -423,6 +429,10 @@ if st.session_state.get("generated") and uploaded_file and text:
     position      = st.session_state["position"]
     text_fill_color = st.session_state["text_fill_color"]
     font_path     = st.session_state["font_path"]
+    image_bytes   = st.session_state["image_bytes"]
+    text          = st.session_state.get("main_text", text)
+    cta_text      = st.session_state.get("cta_text", cta_text)
+    contact       = st.session_state.get("contact", contact)
 
     st.subheader("Adjust Positions")
     col1, col2 = st.columns(2)
@@ -438,7 +448,7 @@ if st.session_state.get("generated") and uploaded_file and text:
     live_img = render_live(
         main_x, main_y, cta_x_pct, cta_y_pct,
         bg, text_fill_color, selected_font, font_path,
-        text, cta_text, contact
+        text, cta_text, contact, image_bytes=image_bytes
     )
     st.image(live_img, caption="Live Preview")
 
@@ -446,6 +456,10 @@ if st.session_state.get("generated") and uploaded_file and text:
     cmyk      = rgb_to_cmyk(text_fill_color[0], text_fill_color[1], text_fill_color[2])
     bg_hex    = rgb_to_hex(bg[0], bg[1], bg[2])
     bg_cmyk   = rgb_to_cmyk(bg[0], bg[1], bg[2])
+
+    # write image to disk briefly for face detection
+    with open("temp_image.jpg", "wb") as f:
+        f.write(image_bytes)
 
     st.subheader("Why this design")
     st.info(f"Font — {selected_font} was chosen because your image is {'dark' if is_dark(bg[0], bg[1], bg[2]) else 'light'} and {get_warmth(bg[0], bg[1], bg[2])}, and your text emotion is {emotion}.")
