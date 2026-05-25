@@ -54,14 +54,14 @@ def get_warmth(r, g, b):
     return "warm" if (r - b) > 0 else "cool"
 
 def get_luminance(r, g, b):
-    r, g, b = r / 255, g / 255, b / 255
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    def linearize(c):
+        c = c / 255
+        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+    return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b)
 
-def get_contrast_ratio(r1, g1, b1, r2, g2, b2):
-    L1 = get_luminance(r1, g1, b1)
-    L2 = get_luminance(r2, g2, b2)
-    lighter = max(L1, L2)
-    darker = min(L1, L2)
+def get_contrast_ratio(l1, l2):
+    lighter = max(l1, l2)
+    darker = min(l1, l2)
     return (lighter + 0.05) / (darker + 0.05)
 
 def get_dominant_color(image_path, k=5):
@@ -74,18 +74,17 @@ def get_dominant_color(image_path, k=5):
     dominant_color = kmeans.cluster_centers_[np.argmax(counts)].astype(int)
     return tuple(int(x) for x in dominant_color)
 
-# FIX 1 — suggest_rgb now properly uses WCAG contrast math
-# It tries complementary color first, falls back to white or black
-# based on actual contrast ratio — no more hardcoded brightness threshold
 def suggest_rgb(r, g, b):
-    white_contrast = get_contrast_ratio(r, g, b, 255, 255, 255)
-    black_contrast = get_contrast_ratio(r, g, b, 0, 0, 0)
+    bg_lum = get_luminance(r, g, b)
+    white_contrast = get_contrast_ratio(bg_lum, 1.0)
+    black_contrast = get_contrast_ratio(bg_lum, 0.0)
 
     h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
     h = (h + 0.5) % 1
     v = max(v, 0.8)
     r2, g2, b2 = colorsys.hsv_to_rgb(h, s, v)
-    comp_contrast = get_contrast_ratio(r, g, b, int(r2 * 255), int(g2 * 255), int(b2 * 255))
+    comp_lum = get_luminance(int(r2 * 255), int(g2 * 255), int(b2 * 255))
+    comp_contrast = get_contrast_ratio(bg_lum, comp_lum)
 
     if comp_contrast >= 4.5:
         return (int(r2 * 255), int(g2 * 255), int(b2 * 255))
@@ -93,6 +92,12 @@ def suggest_rgb(r, g, b):
         return (255, 255, 255)
     else:
         return (0, 0, 0)
+
+def pick_text_color(bg):
+    bg_lum = get_luminance(bg[0], bg[1], bg[2])
+    white_contrast = get_contrast_ratio(bg_lum, 1.0)
+    black_contrast = get_contrast_ratio(bg_lum, 0.0)
+    return (255, 255, 255) if white_contrast > black_contrast else (0, 0, 0)
 
 def rgb_to_hex(r, g, b):
     return f"#{r:02x}{g:02x}{b:02x}".upper()
@@ -222,8 +227,6 @@ def grid_to_coords(grid_input, width, height):
     return (x, y)
 
 # ── RENDER TEXT ───────────────────────────────────────────────────────────────
-# FIX 2 — suggest_rgb no longer receives emotion (it was crashing)
-# emotion is used for font and position only, not color
 def render_text_on_image(image_path, text, font_path=None, manual_pos=None):
     img = Image.open(image_path).convert('RGB')
     width, height = img.size
@@ -289,14 +292,9 @@ def render_cta(img, cta_text, contact, text_fill_color, bg, selected_font, font_
     except:
         ph_font = ImageFont.load_default()
 
-    white_contrast = get_contrast_ratio(bg[0], bg[1], bg[2], 255, 255, 255)
-    black_contrast = get_contrast_ratio(bg[0], bg[1], bg[2], 0, 0, 0)
-    if white_contrast > black_contrast:
-        cta_color = (255, 255, 255)
-        shadow_color = (0, 0, 0)
-    else:
-        cta_color = (0, 0, 0)
-        shadow_color = (255, 255, 255)
+    # FIXED: use luminance-based contrast, not the old 6-arg version
+    cta_color = pick_text_color(bg)
+    shadow_color = (0, 0, 0) if cta_color == (255, 255, 255) else (255, 255, 255)
 
     if manual_pos:
         cta_x, cta_y = grid_to_coords(manual_pos, width, height)
@@ -361,14 +359,9 @@ def render_live(mx, my, cx, cy, bg, text_fill_color, selected_font, font_path, t
     draw.text((new_main_x + 2, new_main_y + 2), wrapped2, fill=shadow2, font=font2)
     draw.text((new_main_x, new_main_y), wrapped2, fill=text_fill_color, font=font2)
 
-    white_contrast = get_contrast_ratio(bg[0], bg[1], bg[2], 255, 255, 255)
-    black_contrast = get_contrast_ratio(bg[0], bg[1], bg[2], 0, 0, 0)
-    if white_contrast > black_contrast:
-        cta_color = (255, 255, 255)
-        cta_shadow = (0, 0, 0)
-    else:
-        cta_color = (0, 0, 0)
-        cta_shadow = (255, 255, 255)
+    # FIXED: use luminance-based contrast, not the old 6-arg version
+    cta_color = pick_text_color(bg)
+    cta_shadow = (0, 0, 0) if cta_color == (255, 255, 255) else (255, 255, 255)
 
     draw.text((new_cta_x + 2, new_cta_y + 2), cta_text, fill=cta_shadow, font=cta_font)
     draw.text((new_cta_x, new_cta_y), cta_text, fill=cta_color, font=cta_font)
@@ -393,8 +386,6 @@ text     = st.text_input("Enter main text:", key="main_text")
 cta_text = st.text_input("Enter CTA text (e.g. Visit Us Today):", key="cta_text")
 contact  = st.text_input("Enter phone number or website link:", key="contact")
 
-# FIX 3 — generation now stores selected_font and emotion properly
-# render_text_on_image returns 6 values — unpacked correctly here
 if st.button("Generate Poster", key="generate"):
     if uploaded_file and text:
         with open("temp_image.jpg", "wb") as f:
