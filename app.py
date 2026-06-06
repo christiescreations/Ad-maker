@@ -486,7 +486,7 @@ if st.session_state.get("show_adjust"):
         main_x, main_y, cta_x_pct, cta_y_pct,
         bg, text_fill_color, selected_font, font_path,
         text, cta_text, contact,
-        image_bytes, logo_bytes, logo_corner, logo_opacity
+        image_bytes, logo_bytes, logo_corner, logo_opacity, logo_size
     )
     st.image(live_img, caption="Live Preview", use_container_width=True)
 
