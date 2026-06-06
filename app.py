@@ -206,12 +206,10 @@ def suggest_position(image_path, emotion="neutral"):
     return best_section
 
 # ── LOGO PASTE ────────────────────────────────────────────────────────────────
-def paste_logo(img, logo_bytes, corner, opacity):
+def paste_logo(img, logo_bytes, corner, opacity, logo_size):
     width, height = img.size
+    logo_w = width // logo_size
     logo = Image.open(BytesIO(logo_bytes)).convert("RGBA")
-
-    # resize to 1/6 of image width keeping aspect ratio
-    logo_w = width // 6
     logo_h = int(logo.height * (logo_w / logo.width))
     logo   = logo.resize((logo_w, logo_h), Image.LANCZOS)
 
@@ -304,14 +302,14 @@ def render_poster(image_bytes, text, cta_text, contact,
 
     # ── LOGO ──
     if logo_bytes:
-        img = paste_logo(img, logo_bytes, logo_corner, logo_opacity)
+        img = paste_logo(img, logo_bytes, logo_corner, logo_opacity, logo_size)
 
     return img, text_fill_color, font_path, position_name, emotion, bg
 
 # ── LIVE REPOSITION ───────────────────────────────────────────────────────────
 def render_live(mx, my, cx, cy, bg, text_fill_color, selected_font,
                 font_path, text, cta_text, contact,
-                image_bytes, logo_bytes=None, logo_corner="Bottom-Right", logo_opacity=100):
+                image_bytes, logo_bytes=None, logo_corner="Bottom-Right", logo_opacity=100, logo_size=6):
     img    = Image.open(BytesIO(image_bytes)).convert('RGB')
     width, height = img.size
 
@@ -366,7 +364,7 @@ def render_live(mx, my, cx, cy, bg, text_fill_color, selected_font,
         draw.text((ph_x, ph_y), contact, fill=cta_color, font=ph_font)
 
     if logo_bytes:
-        img = paste_logo(img, logo_bytes, logo_corner, logo_opacity)
+        img = paste_logo(img, logo_bytes, logo_corner, logo_opacity, logo_size)
 
     return img
 
@@ -428,6 +426,7 @@ if st.button("Generate — see 3 font options", type="primary"):
         st.session_state["position"]        = shared_meta[2]
         st.session_state["text_fill_color"] = shared_meta[0]
         st.session_state["font_path"]       = shared_meta[1]
+        st.session_state["logo_size"]       = logo_size
         st.session_state["chosen_font"]     = None
         st.session_state["show_adjust"]     = False
 
@@ -468,6 +467,7 @@ if st.session_state.get("show_adjust"):
     logo_bytes      = st.session_state["logo_bytes"]
     logo_corner     = st.session_state["logo_corner"]
     logo_opacity    = st.session_state["logo_opacity"]
+    logo_size       = st.session_state["logo_size"]
 
     st.markdown("---")
     st.subheader(f"Adjusting — {selected_font}")
