@@ -233,7 +233,7 @@ def paste_logo(img, logo_bytes, corner, opacity, logo_size):
 
 # ── CORE RENDER — one complete poster with a specific font ────────────────────
 def render_poster(image_bytes, text, cta_text, contact,
-                  font_name, logo_bytes=None, logo_corner="Bottom-Right", logo_opacity=100):
+                  font_name, logo_bytes=None, logo_corner="Bottom-Right", logo_opacity=100, logo_size=6):
     img    = Image.open(BytesIO(image_bytes)).convert('RGB')
     width, height = img.size
     bg      = get_dominant_color(BytesIO(image_bytes) if False else "temp_image.jpg")
