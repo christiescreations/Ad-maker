@@ -388,6 +388,7 @@ logo_file    = st.file_uploader("Upload your logo", type=["jpg","jpeg","png","we
 logo_corner  = st.radio("Logo corner", ["Top-Left","Top-Right","Bottom-Left","Bottom-Right"],
                          index=3, horizontal=True)
 logo_opacity = st.slider("Logo opacity", 10, 100, 90)
+logo_size    = st.slider("Logo size", 4, 10, 6)
 st.markdown("---")
 
 # ── GENERATE ──────────────────────────────────────────────────────────────────
