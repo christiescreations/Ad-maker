@@ -409,7 +409,7 @@ if st.button("Generate — see 3 font options", type="primary"):
         for font_name in fonts:
             img, text_fill_color, font_path, position, emo, bg_out = render_poster(
                 image_bytes, text, cta_text, contact,
-                font_name, logo_bytes, logo_corner, logo_opacity
+                font_name, logo_bytes, logo_corner, logo_opacity, logo_size
             )
             previews.append((font_name, img))
             if shared_meta is None:
