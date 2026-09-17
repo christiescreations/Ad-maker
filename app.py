@@ -113,17 +113,37 @@ def rgb_to_cmyk(r, g, b):
     return (round(c * 100), round(m * 100), round(y * 100), round(k * 100))
 
 # ── FACE DETECTION ────────────────────────────────────────────────────────────
+# ── FACE DETECTION ────────────────────────────────────────────────────────────
+@st.cache_resource
+def load_face_cascade():
+    """Load the Haar cascade once, with a fallback if cv2.data isn't available."""
+    try:
+        cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+    except AttributeError:
+        # cv2.data missing from this install — locate the cascade file manually
+        cv2_dir = os.path.dirname(cv2.__file__)
+        cascade_path = os.path.join(cv2_dir, 'data', 'haarcascade_frontalface_default.xml')
+
+    if not os.path.exists(cascade_path):
+        st.warning("Face detection model not found — continuing without face detection.")
+        return None
+
+    classifier = cv2.CascadeClassifier(cascade_path)
+    if classifier.empty():
+        st.warning("Face detection model failed to load — continuing without face detection.")
+        return None
+    return classifier
+
 def find_face(image_path):
+    face_cascade = load_face_cascade()
+    if face_cascade is None:
+        return []
     img = cv2.imread(image_path)
     if img is None:
         return []
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    face_cascade = cv2.CascadeClassifier(
-        cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-    )
     faces = face_cascade.detectMultiScale(gray, 1.1, 4)
     return faces
-
 # ── TEXT EMOTION ──────────────────────────────────────────────────────────────
 def analyze_text_emotion(text):
     t = text.lower()
