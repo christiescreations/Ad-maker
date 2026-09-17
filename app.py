@@ -160,7 +160,9 @@ def find_face(image_path):
 
     # scale face coordinates back to original image size
     if scale != 1.0:
-            faces = [(int(x/scale), int(y/scale), int(w_/scale), int(h_/scale)) for (x, y, w_, h_) in faces]
+        faces = [(int(x/scale), int(y/scale), int(w_/scale), int(h_/scale)) for (x, y, w_, h_) in faces]
+
+    return faces
 # ── TEXT EMOTION ──────────────────────────────────────────────────────────────
 def analyze_text_emotion(text):
     t = text.lower()
