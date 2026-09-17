@@ -113,7 +113,7 @@ def rgb_to_cmyk(r, g, b):
     return (round(c * 100), round(m * 100), round(y * 100), round(k * 100))
 
 # ── FACE DETECTION ────────────────────────────────────────────────────────────
-# ── FACE DETECTION ────────────────────────────────────────────────────────────
+
 @st.cache_resource
 def load_face_cascade():
     """Load the Haar cascade once, with a fallback if cv2.data isn't available."""
@@ -141,8 +141,26 @@ def find_face(image_path):
     img = cv2.imread(image_path)
     if img is None:
         return []
+
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+    gray = cv2.equalizeHist(gray)  # improves contrast, helps detection
+
+    # normalize size for detection so scaleFactor behaves consistently
+    h, w = gray.shape
+    scale = 800 / max(h, w) if max(h, w) > 800 else 1.0
+    gray_resized = cv2.resize(gray, (int(w * scale), int(h * scale))) if scale != 1.0 else gray
+
+    faces = face_cascade.detectMultiScale(
+        gray_resized,
+        scaleFactor=1.05,
+        minNeighbors=3,
+        minSize=(40, 40)
+    )
+
+    # scale face coordinates back to original image size
+    if scale != 1.0:
+        faces = [(int(x/scale), int(y/scale), int(w_/scale), int(h_/scale)) for (x, y, w_, h_) in faces]
+
     return faces
 # ── TEXT EMOTION ──────────────────────────────────────────────────────────────
 def analyze_text_emotion(text):
