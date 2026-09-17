@@ -113,22 +113,23 @@ def rgb_to_cmyk(r, g, b):
     return (round(c * 100), round(m * 100), round(y * 100), round(k * 100))
 
 # ── FACE DETECTION ────────────────────────────────────────────────────────────
+CASCADE_URL = "https://raw.githubusercontent.com/opencv/opencv/4.x/data/haarcascades/haarcascade_frontalface_default.xml"
+CASCADE_PATH = "haarcascade_frontalface_default.xml"
 
 @st.cache_resource
 def load_face_cascade():
-    """Load the Haar cascade once, with a fallback if cv2.data isn't available."""
-    try:
-        cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-    except AttributeError:
-        # cv2.data missing from this install — locate the cascade file manually
-        cv2_dir = os.path.dirname(cv2.__file__)
-        cascade_path = os.path.join(cv2_dir, 'data', 'haarcascade_frontalface_default.xml')
+    """Load the Haar cascade, downloading it if it's missing from this OpenCV install."""
+    if not os.path.exists(CASCADE_PATH):
+        try:
+            response = requests.get(CASCADE_URL, timeout=10)
+            response.raise_for_status()
+            with open(CASCADE_PATH, 'wb') as f:
+                f.write(response.content)
+        except Exception as e:
+            st.warning(f"Could not download face detection model: {e}")
+            return None
 
-    if not os.path.exists(cascade_path):
-        st.warning("Face detection model not found — continuing without face detection.")
-        return None
-
-    classifier = cv2.CascadeClassifier(cascade_path)
+    classifier = cv2.CascadeClassifier(CASCADE_PATH)
     if classifier.empty():
         st.warning("Face detection model failed to load — continuing without face detection.")
         return None
@@ -159,9 +160,7 @@ def find_face(image_path):
 
     # scale face coordinates back to original image size
     if scale != 1.0:
-        faces = [(int(x/scale), int(y/scale), int(w_/scale), int(h_/scale)) for (x, y, w_, h_) in faces]
-
-    return faces
+        faces = [(int(x/scale), int(y/scale), int(w_/scale), int(h_/scale)) for
 # ── TEXT EMOTION ──────────────────────────────────────────────────────────────
 def analyze_text_emotion(text):
     t = text.lower()
